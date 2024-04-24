@@ -4,9 +4,9 @@ require_relative 'user_input'
 
 DEF_INITIAL_AMOUNT = 10.0
 DEF_YEARLY_REWARD_RATE = 4
-DEF_START_DATE = '2024-04-14'
+DEF_START_DATE = '2024-12-14'
 DEF_DURATION_MONTS = 24
-DEF_PAYMENT_DAY = 14
+DEF_PAYMENT_DAY = 1
 DEF_REINVEST_REWARDS = false
 
 # for calculating Ethereum staking profits
@@ -34,32 +34,38 @@ class StakingCalculator
     new(params)
   end
 
-  def calc_next_monthly_profit(date)
+  private
+
+  def calc_next_monthly_profit(date, investment_amount_eth )
     day_interest = calc_month_day_interest_rate(date.year, date.month)
     curr_day = date.day
 
-    if @payment_day > curr_day
-      # Will calculate from interest got starting from current day until the payment day
-      # For instance, when current day is 14th and the payment day is 25th
+    if payment_day > curr_day
+      # Calculates interest from the current day until the payment day in the same month
 
-      days_until_payment = @payment_day - curr_day
+      days_until_payment = payment_day - curr_day
       days_until_payment * day_interest
     else
-      # Will include this month left days and the other month days until the payment day
-      # for instance, if start day is 14th and the payment day is 4th
-
+      # Calculates interest for the remaining days in the current month
       left_starting_month_days = calc_days_in_month(date.year, date.month) - curr_day
-      starting_profit = left_starting_month_days * day_interest
+      starting_profit = left_starting_month_days * day_interest * investment_amount_eth
 
+      # Calculates interest for the next month until the payment day
       next_month_date = date << 1
       next_month_day_interest = calc_month_day_interest_rate(next_month_date.year, next_month_date.month)
-      next_month_profit = @payment_day * next_month_day_interest
+      next_month_profit = payment_day * next_month_day_interest * investment_amount_eth
 
       starting_profit + next_month_profit
     end
   end
 
-  private
+  def calc_next_reward_date(date)
+    if date.day < payment_day
+      date - (date.day - payment_day)
+    else
+      Date.new(date.year, date.month, payment_day) << -1
+    end
+  end
 
   def calc_month_day_interest_rate(year, month)
     days_in_year = calc_days_in_year(year)
