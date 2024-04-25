@@ -10,8 +10,8 @@ class UserInput
       initial_amount: input_obj.input('ETH initial investment amount', entering_float: true).to_f,
       yearly_reward_rate: input_obj.input('yearly staking reward rate in %', entering_integer: true).to_i,
       start_date: Date.parse(input_obj.input('staking start date', entering_date: true)),
-      duration_monts: input_obj.input('staking duration in months', entering_integer: true).to_i,
-      payment_day: input_obj.input('reward payment', entering_integer: true).to_i,
+      duration_months: input_obj.input('staking duration in months', entering_integer: true).to_i,
+      payment_day: input_obj.input('reward payment day', entering_integer: true).to_i,
       reinvest_rewards: input_obj.input('if you want to reinvest staking rewards (Y/n)', entering_boolean: true) == 'y'
     }
   end
