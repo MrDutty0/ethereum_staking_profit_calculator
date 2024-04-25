@@ -2,6 +2,7 @@
 
 require_relative 'user_input'
 require_relative 'constants'
+require_relative 'schedule_generator'
 
 # for calculating Ethereum staking profits
 class StakingCalculator
@@ -10,12 +11,7 @@ class StakingCalculator
   include ScheduleGenerator
 
   def initialize(params)
-    @initial_amount = params[:initial_amount]
-    @yearly_reward_rate = params[:yearly_reward_rate]
-    @start_date = params[:start_date]
-    @duration_months = params[:duration_months]
-    @payment_day = params[:payment_day]
-    @reinvest_rewards = params[:reinvest_rewards]
+    params.each { |key, value| instance_variable_set("@#{key}", value) }
   end
 
   def self.create(inputting_data: false)
@@ -30,10 +26,36 @@ class StakingCalculator
     new(params)
   end
 
+  def calculate_and_generate_profit_schedule
+    schedule = calculate_staking_profit_schedule
+    generate_csv_profit_schedule(schedule)
+  end
+
   private
 
+  def calculate_staking_profit_schedule
+    schedule = []
+
+    total_reward_accumulated = 0
+    reward_date = start_date
+
+    (1..duration_months).each do |line_no|
+      investment_amount = calc_investment_amount(total_reward_accumulated)
+      interest_rate = calc_interest_rate(reward_date)
+
+      reward_amount = calc_next_monthly_profit(reward_date, investment_amount, interest_rate)
+
+      reward_date = calc_next_reward_date(reward_date)
+
+      schedule << form_schedule_column(line_no, reward_date, investment_amount, reward_amount, total_reward_accumulated, interest_rate)
+
+      total_reward_accumulated += reward_amount
+    end
+    schedule
+  end
+
   def calc_interest_rate(reward_date)
-    reward_date == Date.parse(DEF_REWARD_RATE_CHANGING_DATE) ? CHANGED_REWARD_RATE : yearly_reward_rate
+    reward_date >= Date.parse(DEF_REWARD_RATE_CHANGING_DATE) ? CHANGED_REWARD_RATE : yearly_reward_rate
   end
 
   def calc_investment_amount(accumulation)
